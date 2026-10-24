@@ -50,7 +50,7 @@ h1{margin:2px 0 0;font-size:clamp(1.9rem,6.4vw,2.7rem);line-height:1.35;font-wei
 .alertbar{display:flex;align-items:center;gap:12px;width:100%;border:1px solid var(--alert);border-radius:var(--r);background:var(--alertbg);color:var(--ink);text-align:left;font:inherit;padding:10px 16px;cursor:pointer;animation:rise .6s var(--ease) both;transition:background .3s}
 .alertbar:hover{filter:brightness(.98)}
 .alertbar .tg{flex:none;background:var(--alert);color:#fff;font-size:.74rem;font-weight:700;border-radius:3px;padding:1px 9px;line-height:1.6}
-.alertbar .at{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;font-size:.93rem}
+.alertbar .at{min-width:0;flex:1;font-weight:700;font-size:.93rem;line-height:1.6;white-space:normal;overflow-wrap:anywhere}
 .alertbar .arr{flex:none;color:var(--alert);font-size:1.3rem;line-height:1}
 .alertbar.notice{border-color:#a35f00;background:#fff4de}
 .alertbar.notice .tg{background:#a35f00}
@@ -243,22 +243,29 @@ main{padding-bottom:40px}
   #schedule dl{padding:12px 14px 16px}
 }
 /* おまけ：ほうきのアイコン */
-.egg{position:fixed;left:14px;bottom:14px;z-index:35;width:40px;height:40px;padding:0;border:0;background:none;color:var(--main);opacity:.28;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .3s,transform .45s var(--ease)}
-.egg svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.egg:hover,.egg:focus-visible{opacity:.8;transform:rotate(-12deg)}
+.egg-wrap{position:fixed;left:0;bottom:0;z-index:35;display:flex;align-items:center;gap:4px;height:38px;padding:0 16px 0 8px;background:rgba(255,255,255,.94);border:1px solid var(--line);border-left:0;border-bottom:0;border-radius:0 8px 0 0}
+.egg{width:30px;height:30px;padding:0;border:0;background:none;color:var(--main);opacity:.35;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .3s,transform .45s var(--ease)}
+.egg svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.egg:hover,.egg:focus-visible{opacity:.85;transform:rotate(-12deg)}
+.views{font-size:.8rem;font-weight:700;color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap}
 .fx{position:fixed;inset:0;z-index:100;cursor:pointer;touch-action:none}
 .fx canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .fxmsg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:max-content;max-width:92vw;text-align:center;pointer-events:none;opacity:0}
 .fxmsg.show{opacity:1}
 .fxlogo{display:block;width:120px;height:120px;margin:0 auto 8px;border-radius:50%;box-shadow:0 8px 28px rgba(20,38,90,.28)}
 .fxbig{font-size:clamp(2.3rem,10vw,4.4rem);line-height:1.25;font-weight:900;letter-spacing:.06em;color:var(--deep);-webkit-text-stroke:10px #fff;paint-order:stroke fill}
-.fxsub{display:inline-block;margin-top:8px;padding:4px 20px;border-radius:6px;background:var(--main);color:#fff;font-weight:700;font-size:1.05rem}
+.fxsub{display:inline-block;max-width:min(92vw,560px);margin-top:8px;padding:5px 20px;line-height:1.5;border-radius:6px;background:var(--main);color:#fff;font-weight:700;font-size:1.05rem}
 .fxmsg.show .fxlogo{animation:spinin 1s var(--ease) both}
 .fxmsg.show .fxbig{animation:bigpop .7s cubic-bezier(.3,1.6,.5,1) .15s both}
 .fxmsg.show .fxsub{animation:rise .6s var(--ease) .5s both}
 @keyframes spinin{from{opacity:0;transform:rotate(-360deg) scale(.2)}to{opacity:1;transform:none}}
 @keyframes bigpop{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:none}}
-@media(max-width:720px){.egg{left:8px;bottom:calc(64px + env(safe-area-inset-bottom) + 8px)}}
+@media(max-width:720px){
+  .egg-wrap{right:0;height:calc(32px + env(safe-area-inset-bottom));padding:0 12px 0 6px;padding-bottom:env(safe-area-inset-bottom);border-right:0;border-radius:0;background:#fff}
+  .nav{bottom:calc(32px + env(safe-area-inset-bottom));padding-bottom:0}
+  body{padding-bottom:calc(64px + 32px + env(safe-area-inset-bottom))}
+  .totop{bottom:calc(64px + 32px + env(safe-area-inset-bottom) + 14px)}
+}
 </style>
 </head>
 <body>
@@ -287,7 +294,7 @@ main{padding-bottom:40px}
 
 <button class="totop" id="toTop" type="button" aria-label="ページの先頭へ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5h14"/><path d="M12 20V8"/><path d="M6 13.5 12 7.5l6 6"/></svg><span>先頭へ</span></button>
 
-<button class="egg" id="egg" type="button" aria-label="ほうきのアイコン（押すと、おまけがあります）"><svg viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(35 12 12)"><path d="M12 1.8V10.5"/><path d="M9.8 10.5h4.4v2.4H9.8z"/><path d="M9.8 12.9 7.3 21.8h9.4l-2.5-8.9"/><path d="M10.6 16v5.8M12 16v5.8M13.4 16v5.8"/></g></svg></button>
+<div class="egg-wrap" id="eggWrap"><button class="egg" id="egg" type="button" aria-label="ほうきのアイコン（押すと、おまけがあります）"><svg viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(35 12 12)"><path d="M12 1.8V10.5"/><path d="M9.8 10.5h4.4v2.4H9.8z"/><path d="M9.8 12.9 7.3 21.8h9.4l-2.5-8.9"/><path d="M10.6 16v5.8M12 16v5.8M13.4 16v5.8"/></g></svg></button><span class="views" id="views" hidden></span></div>
 <div class="fx" id="fx" hidden aria-hidden="true">
   <canvas id="fxc"></canvas>
   <div class="fxmsg" id="fxmsg"><img class="fxlogo" id="fxlogo" alt=""><div class="fxbig" id="fxbig"></div><div class="fxsub" id="fxsub"></div></div>
@@ -303,7 +310,7 @@ const PORTAL_NAME = "限定ポータル";
 
 /* スプレッドシート連携：Google Apps Script のウェブアプリURLを貼ります。
    空のままだと、下の SAMPLE（見本）が表示されます。 */
-const API_URL = "https://script.google.com/macros/s/AKfycbybMv0L0KKHWeL_N0FIW_t0PWFlle9JnAw4TfwfoQYHTXGHjDYh4mheQF1T1RkByQ3V/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbx9ohMXVXi2Gzy-1llYFBI1ju030n4cE6hpErOq3G7kflP6wJ7D4xrF9MpUHUoQHINt/exec";
 
 /* リンク：URLを書き換えるだけで反映されます */
 const LINKS = [
@@ -338,7 +345,8 @@ const SAMPLE = {
   ],
   faq:[
     {q:"【見本】雨の日はどうなりますか。", a:"スプレッドシートの「Q&A」シートに書いた内容が、ここに表示されます。"}
-  ]
+  ],
+  views:1234
 };
 
 /* =====================================================================
@@ -473,8 +481,22 @@ function renderHighlights(d){
   $("next").hidden = !nx;
   if (nx){ $("nDate").textContent = nx.date || "日程調整中"; $("next").classList.toggle("wide", (nx.date || "").indexOf("〜") >= 0); setMarquee(nx.title); }
 }
+/* 左下のアクセス数（連携スクリプトが数字を返したときだけ出す） */
+function showViews(n){
+  const el = $("views"); if (!el) return;
+  if (typeof n === "number" && isFinite(n)){ el.textContent = "アクセス " + n.toLocaleString("ja-JP"); el.hidden = false; } else el.hidden = true;
+}
+/* 同じ端末は、30分に1回だけ数える。URLの末尾に ?nocount を付けて開くと、その端末は数えなくなる（?count で戻る） */
+function wantHit(){
+  try {
+    if (/[?&]nocount/.test(location.search)) localStorage.setItem("kct-nocount", "1");
+    if (/[?&]count(&|$)/.test(location.search)) localStorage.removeItem("kct-nocount");
+    if (localStorage.getItem("kct-nocount")) return false;
+    return Date.now() - (Number(localStorage.getItem("kct-hit")) || 0) > 30 * 60 * 1000;
+  } catch (e) { return true; }
+}
 function renderAll(d){
-  renderNews(d.news); renderSchedule(d.schedule); renderFaq(d.faq); renderHighlights(d);
+  renderNews(d.news); renderSchedule(d.schedule); renderFaq(d.faq); renderHighlights(d); showViews(d.views);
 }
 
 /* ---------- スプレッドシートの読み込み ---------- */
@@ -492,11 +514,13 @@ function load(){
   let cached = null;
   try { cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null"); } catch (e) {}
   if (cached) renderAll(cached); else skeleton();
-  fetch(API_URL, {cache:"no-store"})
+  const hit = wantHit();
+  fetch(API_URL + (API_URL.indexOf("?") < 0 ? "?" : "&") + (hit ? "hit=1" : "v=1"), {cache:"no-store"})
     .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(d => {
       if (!d || !Array.isArray(d.news) || !Array.isArray(d.schedule) || !Array.isArray(d.faq)) throw new Error("bad data");
       renderAll(d);
+      if (hit){ try { localStorage.setItem("kct-hit", String(Date.now())); } catch (e) {} }
       try { localStorage.setItem(CACHE_KEY, JSON.stringify(d)); } catch (e) {}
     })
     .catch(() => { if (!cached) failed(); });
@@ -552,7 +576,8 @@ $("toTop").addEventListener("click", () => window.scrollTo({top:0, behavior:"smo
 (function(){
   const btn = $("egg"), fx = $("fx"), cv = $("fxc"), ctx = cv.getContext("2d"), msgBox = $("fxmsg");
   let running = false, done = true, raf = 0, timer = 0;
-  const MSGS = ["ピカピカ！", "きれいになったね！", "ありがとう！", "ポイ捨てゼロへ！", "まち、ぴかぴか！"];
+  const MSGS = ["ピカピカ！", "きれいになったね！", "ありがとう！", "ポイ捨てゼロへ！", "まち、ぴかぴか！", "すっきり！", "お見事！", "いい仕事！", "高知が、きれいに。", "みんなのおかげ！", "ごくろうさま！", "気持ちいい〜！", "まちが笑った！"];
+  let lastBig = -1, lastSub = -1;
   const rnd = (a, b) => a + Math.random() * (b - a);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const smooth = p => p * p * (3 - 2 * p);
@@ -567,6 +592,11 @@ $("toTop").addEventListener("click", () => window.scrollTo({top:0, behavior:"smo
     leaf(c){ ctx.beginPath(); ctx.ellipse(0, 0, 16, 8, 0, 0, 7); ctx.fillStyle = c; ctx.fill(); ink(); ctx.beginPath(); ctx.moveTo(-16, 0); ctx.lineTo(14, 0); ctx.strokeStyle = "rgba(255,255,255,.7)"; ctx.stroke(); },
     wrap(c){ ctx.beginPath(); ctx.moveTo(-16, -8); ctx.lineTo(-12, -4); ctx.lineTo(-16, 0); ctx.lineTo(-12, 4); ctx.lineTo(-16, 8); ctx.lineTo(16, 8); ctx.lineTo(12, 4); ctx.lineTo(16, 0); ctx.lineTo(12, -4); ctx.lineTo(16, -8); ctx.closePath(); ctx.fillStyle = c; ctx.fill(); ink(); ctx.fillStyle = "rgba(255,255,255,.6)"; ctx.fillRect(-7, -3, 14, 6); },
     boot(c){ ctx.beginPath(); ctx.moveTo(-7, -17); ctx.lineTo(5, -17); ctx.lineTo(5, 3); ctx.lineTo(17, 6); ctx.quadraticCurveTo(20, 15, 12, 15); ctx.lineTo(-7, 15); ctx.closePath(); ctx.fillStyle = c; ctx.fill(); ink(); ctx.fillStyle = "rgba(255,255,255,.45)"; ctx.fillRect(-7, -17, 12, 4); }
+  };
+  DRAW.gold = function(){
+    const g = ctx.createRadialGradient(0, 0, 4, 0, 0, 30); g.addColorStop(0, "rgba(255,220,90,.9)"); g.addColorStop(1, "rgba(255,220,90,0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 30, 0, 7); ctx.fill();
+    DRAW.can("#f5b82e");
   };
   const KINDS = [["can", ["#d6335a", "#4a78e0", "#b8c2d0", "#3aa66a"]], ["can", ["#d6335a", "#4a78e0", "#b8c2d0"]], ["bottle", ["#4a78e0", "#d6335a"]], ["paper", [""]], ["paper", [""]], ["leaf", ["#5aa65a", "#c98a2e", "#8fb83a"]], ["leaf", ["#5aa65a", "#c98a2e"]], ["wrap", ["#ff9db5", "#ffd24a", "#7fd0e8"]], ["wrap", ["#ff9db5", "#ffd24a"]], ["boot", ["#2f5be0", "#e8b92b"]]];
 
@@ -590,7 +620,7 @@ $("toTop").addEventListener("click", () => window.scrollTo({top:0, behavior:"smo
     ctx.closePath(); ctx.restore();
   }
 
-  let W, H, items, brooms, sparks, nb, bh, count;
+  let W, H, items, brooms, sparks, nb, bh, count, counts;
   function build(){
     W = innerWidth; H = innerHeight;
     nb = Math.max(4, Math.round(H / 150)); bh = H / nb;
@@ -599,10 +629,16 @@ $("toTop").addEventListener("click", () => window.scrollTo({top:0, behavior:"smo
     items = [];
     for (let i = 0; i < count; i++){
       const kd = KINDS[Math.floor(Math.random() * KINDS.length)], y = rnd(26, H - 26);
-      items.push({ f: DRAW[kd[0]], c: kd[1][Math.floor(Math.random() * kd[1].length)], x: rnd(30, W - 30), y,
+      items.push({ kind: kd[0], f: DRAW[kd[0]], c: kd[1][Math.floor(Math.random() * kd[1].length)], x: rnd(30, W - 30), y,
         rot: rnd(0, 6.28), spin: rnd(-4, 4), ds: rnd(0, 0.45), dur: rnd(0.45, 0.6), s: sc * rnd(0.9, 1.25),
         b: Math.min(nb - 1, Math.floor(y / bh)), k: rnd(6, 70) * sc });
     }
+    if (Math.random() < 0.05){   /* ときどき、金の空き缶が混ざる */
+      const y = rnd(40, H - 40);
+      items.push({ kind: "gold", f: DRAW.gold, c: "", x: rnd(40, W - 40), y, rot: rnd(-0.4, 0.4), spin: rnd(-2, 2), ds: rnd(0, 0.4), dur: 0.55, s: sc * 1.3, b: Math.min(nb - 1, Math.floor(y / bh)), k: rnd(6, 40) * sc });
+    }
+    count = items.length; counts = {};
+    items.forEach(it => { counts[it.kind] = (counts[it.kind] || 0) + 1; });
     brooms = [];
     for (let b = 0; b < nb; b++) brooms.push({ dir: b % 2 ? -1 : 1, start: 1.05 + b * 0.14, dur: 1.5 });
     sparks = [];
@@ -667,6 +703,42 @@ $("toTop").addEventListener("click", () => window.scrollTo({top:0, behavior:"smo
     }
   }
 
+  /* 「ごみ○個 回収」まわりの言葉。条件に合うものから、毎回ちがうものを選ぶ */
+  const UNIT = { can: ["空き缶", "個"], bottle: ["ペットボトル", "本"], paper: ["紙くず", "個"], leaf: ["落ち葉", "枚"], wrap: ["お菓子の袋", "枚"], boot: ["長靴", "足"], gold: ["金の空き缶", "個"] };
+  function makeSub(){
+    const n = count, cn = counts, now = new Date(), m = now.getMonth() + 1, hh = now.getHours();
+    const f = k => UNIT[k][0] + " " + cn[k] + UNIT[k][1];
+    if (cn.gold) return "★ 金の空き缶を発見！ 今日は、いいことがあるかも";
+    let times = 1;
+    try { times = (Number(localStorage.getItem("kct-egg")) || 0) + 1; localStorage.setItem("kct-egg", String(times)); } catch (err) {}
+    if ([10, 30, 50, 100].indexOf(times) >= 0) return times + "回目！ そうじ名人です（ごみ " + n + "個 回収）";
+    const keys = Object.keys(cn).filter(k => cn[k] > 0 && k !== "gold").sort((a, b) => cn[b] - cn[a]);
+    const zone = hh < 5 ? "夜ふかし" : hh < 10 ? "朝" : hh < 15 ? "昼" : hh < 18 ? "夕方" : "夜";
+    const season = m >= 3 && m <= 5 ? "春のおだやかな日" : m >= 6 && m <= 8 ? "暑い中" : m >= 9 && m <= 11 ? "秋風の中" : "寒い中";
+    const rank = n < 33 ? "見習い隊員" : n < 42 ? "頼れる隊員" : n < 52 ? "ベテラン隊員" : "清掃隊長";
+    const T = [
+      () => "ごみ " + n + "個 回収！",
+      () => "ごみ " + n + "個 回収！",
+      () => keys.slice(0, 3).map(f).join("・") + (keys.length > 3 ? " ほか" : ""),
+      () => "いちばん多かったのは " + UNIT[keys[0]][0] + "（" + cn[keys[0]] + UNIT[keys[0]][1] + "）",
+      () => cn.boot ? "なぜか 長靴も " + cn.boot + "足 落ちていました" : null,
+      () => cn.leaf ? "落ち葉 " + cn.leaf + "枚。" + (m >= 9 && m <= 11 ? "秋ですね" : "季節を感じます") : null,
+      () => "ほうき " + nb + "本で、ごみ " + n + "個 回収！",
+      () => "5秒で " + n + "個 回収！ はやい！",
+      () => zone + "のおそうじ、おつかれさま！（" + n + "個）",
+      () => season + "、ごみ " + n + "個 回収！",
+      () => "称号：" + rank + "（ごみ " + n + "個）",
+      () => times >= 2 ? times + "回目のおそうじ！ ごみ " + n + "個" : "はじめてのおそうじ！ ごみ " + n + "個",
+      () => "きれい度 100％！ ごみ " + n + "個 回収",
+      () => cn.can && cn.bottle ? "空き缶 " + cn.can + "個 と ペットボトル " + cn.bottle + "本。分別もばっちり！" : null
+    ];
+    let pick = null, guard = 0;
+    while (pick === null && guard++ < 30){
+      const i = Math.floor(Math.random() * T.length); if (i === lastSub) continue;
+      const s = T[i](); if (s !== null){ pick = s; lastSub = i; }
+    }
+    return pick || "ごみ " + n + "個 回収！";
+  }
   function finish(){
     if (done) return; done = true;
     cancelAnimationFrame(raf); clearTimeout(timer);
@@ -681,8 +753,9 @@ $("toTop").addEventListener("click", () => window.scrollTo({top:0, behavior:"smo
     build();
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     $("fxlogo").src = document.querySelector(".mark").src;
-    $("fxbig").textContent = MSGS[Math.floor(Math.random() * MSGS.length)];
-    $("fxsub").textContent = "ごみ " + count + "個 回収！";
+    let bi; do { bi = Math.floor(Math.random() * MSGS.length); } while (bi === lastBig && MSGS.length > 1);
+    lastBig = bi; $("fxbig").textContent = MSGS[bi];
+    $("fxsub").textContent = makeSub();
     msgBox.classList.remove("show"); void msgBox.offsetWidth;
     fx.style.transition = "none"; fx.style.opacity = "1"; fx.hidden = false;
     if (reduce){
@@ -704,7 +777,7 @@ $("toTop").addEventListener("click", () => window.scrollTo({top:0, behavior:"smo
   btn.addEventListener("click", start);
   fx.addEventListener("click", finish);
   window.addEventListener("keydown", e => { if (e.key === "Escape") finish(); });
-  window.__fx = { start, draw, build };   /* 動作確認用 */
+  window.__fx = { start, draw, build, makeSub: () => { build(); return makeSub(); } };   /* 動作確認用 */
 })();
 
 /* ---------- 起動 ---------- */
