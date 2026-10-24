@@ -484,7 +484,7 @@ function renderHighlights(d){
 /* 左下のアクセス数（連携スクリプトが数字を返したときだけ出す） */
 function showViews(n){
   const el = $("views"); if (!el) return;
-  if (typeof n === "number" && isFinite(n)){ el.textContent = "アクセス " + n.toLocaleString("ja-JP"); el.hidden = false; } else el.hidden = true;
+  if (typeof n === "number" && isFinite(n)){ el.textContent = "" + n.toLocaleString("ja-JP"); el.hidden = false; } else el.hidden = true;
 }
 /* 同じ端末は、30分に1回だけ数える。URLの末尾に ?nocount を付けて開くと、その端末は数えなくなる（?count で戻る） */
 function wantHit(){
