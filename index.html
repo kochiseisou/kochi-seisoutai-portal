@@ -170,6 +170,9 @@ main{padding-bottom:40px}
   .grid{grid-template-columns:1fr}
 }
 @media(max-width:560px){
+  .next.wide{flex-wrap:wrap;row-gap:4px}
+  .next.wide .narr{order:2;margin-left:auto}
+  .next.wide .ntitle{order:3;flex:1 1 100%}
   .mark{width:128px;height:128px}
   .next{padding:9px 12px;gap:8px}
   .ndate{font-size:.85rem}
@@ -239,6 +242,23 @@ main{padding-bottom:40px}
   #schedule .past>summary::after{right:0}
   #schedule dl{padding:12px 14px 16px}
 }
+/* おまけ：ほうきのアイコン */
+.egg{position:fixed;left:14px;bottom:14px;z-index:35;width:40px;height:40px;padding:0;border:0;background:none;color:var(--main);opacity:.28;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .3s,transform .45s var(--ease)}
+.egg svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.egg:hover,.egg:focus-visible{opacity:.8;transform:rotate(-12deg)}
+.fx{position:fixed;inset:0;z-index:100;cursor:pointer;touch-action:none}
+.fx canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.fxmsg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:max-content;max-width:92vw;text-align:center;pointer-events:none;opacity:0}
+.fxmsg.show{opacity:1}
+.fxlogo{display:block;width:120px;height:120px;margin:0 auto 8px;border-radius:50%;box-shadow:0 8px 28px rgba(20,38,90,.28)}
+.fxbig{font-size:clamp(2.3rem,10vw,4.4rem);line-height:1.25;font-weight:900;letter-spacing:.06em;color:var(--deep);-webkit-text-stroke:10px #fff;paint-order:stroke fill}
+.fxsub{display:inline-block;margin-top:8px;padding:4px 20px;border-radius:6px;background:var(--main);color:#fff;font-weight:700;font-size:1.05rem}
+.fxmsg.show .fxlogo{animation:spinin 1s var(--ease) both}
+.fxmsg.show .fxbig{animation:bigpop .7s cubic-bezier(.3,1.6,.5,1) .15s both}
+.fxmsg.show .fxsub{animation:rise .6s var(--ease) .5s both}
+@keyframes spinin{from{opacity:0;transform:rotate(-360deg) scale(.2)}to{opacity:1;transform:none}}
+@keyframes bigpop{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:none}}
+@media(max-width:720px){.egg{left:8px;bottom:calc(64px + env(safe-area-inset-bottom) + 8px)}}
 </style>
 </head>
 <body>
@@ -267,6 +287,12 @@ main{padding-bottom:40px}
 
 <button class="totop" id="toTop" type="button" aria-label="ページの先頭へ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5h14"/><path d="M12 20V8"/><path d="M6 13.5 12 7.5l6 6"/></svg><span>先頭へ</span></button>
 
+<button class="egg" id="egg" type="button" aria-label="ほうきのアイコン（押すと、おまけがあります）"><svg viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(35 12 12)"><path d="M12 1.8V10.5"/><path d="M9.8 10.5h4.4v2.4H9.8z"/><path d="M9.8 12.9 7.3 21.8h9.4l-2.5-8.9"/><path d="M10.6 16v5.8M12 16v5.8M13.4 16v5.8"/></g></svg></button>
+<div class="fx" id="fx" hidden aria-hidden="true">
+  <canvas id="fxc"></canvas>
+  <div class="fxmsg" id="fxmsg"><img class="fxlogo" id="fxlogo" alt=""><div class="fxbig" id="fxbig"></div><div class="fxsub" id="fxsub"></div></div>
+</div>
+
 <script>
 /* =====================================================================
    設定（ここだけ編集します）
@@ -277,7 +303,7 @@ const PORTAL_NAME = "限定ポータル";
 
 /* スプレッドシート連携：Google Apps Script のウェブアプリURLを貼ります。
    空のままだと、下の SAMPLE（見本）が表示されます。 */
-const API_URL = "";
+const API_URL = "https://script.google.com/macros/s/AKfycbybMv0L0KKHWeL_N0FIW_t0PWFlle9JnAw4TfwfoQYHTXGHjDYh4mheQF1T1RkByQ3V/exec";
 
 /* リンク：URLを書き換えるだけで反映されます */
 const LINKS = [
@@ -306,6 +332,8 @@ const SAMPLE = {
   schedule:[
     {date:"11月11日（水）", past:false, title:"【見本】こうちカーボンニュートラル推進フォーラム　取組発表",
      details:[["時間","10:00〜"],["会場","（会場名）"],["内容","高知清掃隊として取組発表に登壇"]], url:"https://example.com/"},
+    {date:"12月12日（土）〜13日（日）", past:false, title:"【見本】2日間のイベント",
+     details:[["時間","1日目 10:00〜／2日目 9:00〜"],["会場","（会場名）"]]},
     {date:"10月10日（土）", past:true, title:"【見本】過ぎた予定", details:[["内容","日付が過ぎた予定は、自動で「過ぎた予定」に入ります。"]]}
   ],
   faq:[
@@ -443,7 +471,7 @@ function renderHighlights(d){
   if (ntc) $("noticeText").textContent = ntc.title;
   const nx = (d.schedule || []).find(s => !s.past);
   $("next").hidden = !nx;
-  if (nx){ $("nDate").textContent = nx.date || "日程調整中"; setMarquee(nx.title); }
+  if (nx){ $("nDate").textContent = nx.date || "日程調整中"; $("next").classList.toggle("wide", (nx.date || "").indexOf("〜") >= 0); setMarquee(nx.title); }
 }
 function renderAll(d){
   renderNews(d.news); renderSchedule(d.schedule); renderFaq(d.faq); renderHighlights(d);
@@ -519,6 +547,165 @@ window.addEventListener("resize", () => { moveInd(); spy(); });
 function goTo(id){ const el = $(id); if (el) el.scrollIntoView({behavior:"smooth", block:"start"}); }
 document.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => goTo(b.dataset.go)));
 $("toTop").addEventListener("click", () => window.scrollTo({top:0, behavior:"smooth"}));
+
+/* ---------- おまけ：ほうきのアイコンを押すと、画面いっぱいにそうじが始まる（約5秒） ---------- */
+(function(){
+  const btn = $("egg"), fx = $("fx"), cv = $("fxc"), ctx = cv.getContext("2d"), msgBox = $("fxmsg");
+  let running = false, done = true, raf = 0, timer = 0;
+  const MSGS = ["ピカピカ！", "きれいになったね！", "ありがとう！", "ポイ捨てゼロへ！", "まち、ぴかぴか！"];
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const smooth = p => p * p * (3 - 2 * p);
+
+  /* ごみの絵（中心が原点、だいたい40pxの大きさ） */
+  function rr(x, y, w, h, r){ ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+  function ink(){ ctx.lineWidth = 1.4; ctx.strokeStyle = "rgba(40,55,90,.55)"; ctx.stroke(); }
+  const DRAW = {
+    can(c){ rr(-9, -14, 18, 28, 4); ctx.fillStyle = c; ctx.fill(); ink(); ctx.fillStyle = "rgba(255,255,255,.55)"; ctx.fillRect(-9, -4, 18, 8); ctx.beginPath(); ctx.ellipse(0, -14, 9, 3, 0, 0, 7); ctx.fillStyle = "#cfd6e2"; ctx.fill(); ink(); },
+    bottle(c){ rr(-8, -6, 16, 22, 5); ctx.fillStyle = "rgba(170,220,238,.9)"; ctx.fill(); ink(); rr(-4, -14, 8, 9, 2); ctx.fillStyle = "rgba(170,220,238,.9)"; ctx.fill(); ink(); ctx.fillStyle = c; ctx.fillRect(-5, -19, 10, 5); ctx.fillRect(-8, 2, 16, 6); },
+    paper(){ ctx.beginPath(); for (let i = 0; i < 10; i++){ const a = i / 10 * 6.2832, r = i % 2 ? 10 : 14; ctx[i ? "lineTo" : "moveTo"](Math.cos(a) * r, Math.sin(a) * r); } ctx.closePath(); ctx.fillStyle = "#f7f8fb"; ctx.fill(); ink(); ctx.beginPath(); ctx.moveTo(-6, -3); ctx.lineTo(3, 2); ctx.moveTo(-2, 7); ctx.lineTo(6, -5); ctx.strokeStyle = "rgba(40,55,90,.3)"; ctx.stroke(); },
+    leaf(c){ ctx.beginPath(); ctx.ellipse(0, 0, 16, 8, 0, 0, 7); ctx.fillStyle = c; ctx.fill(); ink(); ctx.beginPath(); ctx.moveTo(-16, 0); ctx.lineTo(14, 0); ctx.strokeStyle = "rgba(255,255,255,.7)"; ctx.stroke(); },
+    wrap(c){ ctx.beginPath(); ctx.moveTo(-16, -8); ctx.lineTo(-12, -4); ctx.lineTo(-16, 0); ctx.lineTo(-12, 4); ctx.lineTo(-16, 8); ctx.lineTo(16, 8); ctx.lineTo(12, 4); ctx.lineTo(16, 0); ctx.lineTo(12, -4); ctx.lineTo(16, -8); ctx.closePath(); ctx.fillStyle = c; ctx.fill(); ink(); ctx.fillStyle = "rgba(255,255,255,.6)"; ctx.fillRect(-7, -3, 14, 6); },
+    boot(c){ ctx.beginPath(); ctx.moveTo(-7, -17); ctx.lineTo(5, -17); ctx.lineTo(5, 3); ctx.lineTo(17, 6); ctx.quadraticCurveTo(20, 15, 12, 15); ctx.lineTo(-7, 15); ctx.closePath(); ctx.fillStyle = c; ctx.fill(); ink(); ctx.fillStyle = "rgba(255,255,255,.45)"; ctx.fillRect(-7, -17, 12, 4); }
+  };
+  const KINDS = [["can", ["#d6335a", "#4a78e0", "#b8c2d0", "#3aa66a"]], ["can", ["#d6335a", "#4a78e0", "#b8c2d0"]], ["bottle", ["#4a78e0", "#d6335a"]], ["paper", [""]], ["paper", [""]], ["leaf", ["#5aa65a", "#c98a2e", "#8fb83a"]], ["leaf", ["#5aa65a", "#c98a2e"]], ["wrap", ["#ff9db5", "#ffd24a", "#7fd0e8"]], ["wrap", ["#ff9db5", "#ffd24a"]], ["boot", ["#2f5be0", "#e8b92b"]]];
+
+  /* ほうき（上から見た形。右へ進むときの向き。handle は進行方向の後ろへ伸びる） */
+  function broom(x, y, dir, bh, t, k){
+    const half = bh * 0.46, depth = Math.max(22, bh * 0.2);
+    ctx.save(); ctx.translate(x, y + Math.sin(t * 9 + k) * bh * 0.025); ctx.scale(dir, 1); ctx.rotate(Math.sin(t * 15 + k) * 0.045);
+    ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(-depth, 0); ctx.lineTo(-depth - 420, -52); ctx.lineWidth = Math.max(6, bh * 0.05); ctx.strokeStyle = "#8d5a2b"; ctx.stroke();
+    ctx.fillStyle = "#b57b3e"; rr(-depth, -half, depth * 0.65, half * 2, 5); ctx.fill();
+    ctx.fillStyle = "#2f5be0"; ctx.fillRect(-depth * 0.4, -half, depth * 0.1, half * 2);
+    const x0 = -depth * 0.3, x1 = depth * 0.7;
+    ctx.fillStyle = "#e8c76a"; ctx.fillRect(x0, -half, x1 - x0, half * 2);
+    ctx.strokeStyle = "#c79a3a"; ctx.lineWidth = 1.6;
+    for (let yy = -half + 5; yy < half; yy += 6){ ctx.beginPath(); ctx.moveTo(x0, yy); ctx.lineTo(x1 + ((yy * 7) % 5), yy); ctx.stroke(); }
+    ctx.restore();
+  }
+  function star(x, y, r, rot){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.beginPath();
+    for (let i = 0; i < 8; i++){ const a = i * Math.PI / 4 - Math.PI / 2, rr2 = i % 2 ? r * 0.28 : r; ctx[i ? "lineTo" : "moveTo"](Math.cos(a) * rr2, Math.sin(a) * rr2); }
+    ctx.closePath(); ctx.restore();
+  }
+
+  let W, H, items, brooms, sparks, nb, bh, count;
+  function build(){
+    W = innerWidth; H = innerHeight;
+    nb = Math.max(4, Math.round(H / 150)); bh = H / nb;
+    const sc = clamp(Math.min(W, H) / 620, 0.8, 1.3);
+    count = clamp(Math.round(W * H / 17000), 26, 64);
+    items = [];
+    for (let i = 0; i < count; i++){
+      const kd = KINDS[Math.floor(Math.random() * KINDS.length)], y = rnd(26, H - 26);
+      items.push({ f: DRAW[kd[0]], c: kd[1][Math.floor(Math.random() * kd[1].length)], x: rnd(30, W - 30), y,
+        rot: rnd(0, 6.28), spin: rnd(-4, 4), ds: rnd(0, 0.45), dur: rnd(0.45, 0.6), s: sc * rnd(0.9, 1.25),
+        b: Math.min(nb - 1, Math.floor(y / bh)), k: rnd(6, 70) * sc });
+    }
+    brooms = [];
+    for (let b = 0; b < nb; b++) brooms.push({ dir: b % 2 ? -1 : 1, start: 1.05 + b * 0.14, dur: 1.5 });
+    sparks = [];
+    for (let i = 0; i < 26; i++) sparks.push({ x: rnd(20, W - 20), y: rnd(20, H - 20), r: rnd(10, 26), ts: 3.0 + rnd(0, 1.1), life: rnd(0.6, 1.0), c: ["#f5b82e", "#ffffff", "#2f5be0", "#f5b82e"][i % 4] });
+  }
+  const M = 150;
+  function front(b, t){
+    const o = brooms[b], p = smooth(clamp((t - o.start) / o.dur, 0, 1));
+    return o.dir > 0 ? -M + p * (W + 2 * M) : W + M - p * (W + 2 * M);
+  }
+  function draw(t){
+    ctx.clearRect(0, 0, W, H);
+    const a = Math.min(1, t / 0.35);
+    ctx.fillStyle = "rgba(238,243,253," + a + ")"; ctx.fillRect(0, 0, W, H);
+    const fadeDirt = clamp((t - 0.2) / 0.4, 0, 1);
+    /* まだ掃いていない所は、少し汚れた色 */
+    for (let b = 0; b < nb; b++){
+      const f = front(b, t), o = brooms[b];
+      ctx.fillStyle = "rgba(120,105,80," + (0.15 * fadeDirt) + ")";
+      const y0 = Math.floor(b * bh), h = Math.ceil(bh) + 1;
+      if (o.dir > 0){ const x0 = clamp(f, 0, W); ctx.fillRect(x0, y0, W - x0, h); } else { const x1 = clamp(f, 0, W); ctx.fillRect(0, y0, x1, h); }
+    }
+    /* ほこり */
+    for (let b = 0; b < nb; b++){
+      const o = brooms[b];
+      for (let j = 0; j < 40; j++){
+        const ts = o.start + j * 0.036, age = (t - ts) / 0.7;
+        if (age < 0 || age > 1) continue;
+        const f = front(b, ts), r1 = Math.sin(j * 12.9 + b * 4.1) * 0.5 + 0.5;
+        ctx.beginPath(); ctx.arc(f - o.dir * (30 + age * 24), (b + 0.15 + r1 * 0.7) * bh - age * 18, 6 + age * 16, 0, 7);
+        ctx.fillStyle = "rgba(255,255,255," + (0.55 * (1 - age)) + ")"; ctx.fill();
+      }
+    }
+    /* ごみ */
+    for (let i = 0; i < items.length; i++){
+      const it = items[i], o = brooms[it.b], f = front(it.b, t);
+      let x = it.x, y, rot = it.rot, hop = 0;
+      const p = clamp((t - it.ds) / it.dur, 0, 1);
+      if (t < it.ds) continue;
+      y = -80 + (it.y + 80) * p * p;
+      if (p < 1) rot += it.spin * (1 - p) * 2;
+      else { const tb = t - it.ds - it.dur; if (tb < 0.22) y -= 14 * Math.sin(tb * Math.PI / 0.22) * (1 - tb / 0.22); }
+      const lead = Math.max(22, bh * 0.2) * 0.7 + it.k;
+      if (o.dir > 0 && x < f + lead){ const d = f + lead - x; x = f + lead; rot += d * 0.025; hop = Math.abs(Math.sin(d * 0.05)) * 10; }
+      if (o.dir < 0 && x > f - lead){ const d = x - (f - lead); x = f - lead; rot -= d * 0.025; hop = Math.abs(Math.sin(d * 0.05)) * 10; }
+      if (x < -60 || x > W + 60) continue;
+      ctx.save(); ctx.translate(x, y - hop); ctx.rotate(rot); ctx.scale(it.s, it.s); it.f(it.c); ctx.restore();
+    }
+    /* ほうき */
+    for (let b = 0; b < nb; b++){
+      const o = brooms[b], f = front(b, t);
+      if (t < o.start || t > o.start + o.dur + 0.05) continue;
+      broom(f, (b + 0.5) * bh, o.dir, bh, t, b);
+    }
+    /* きらきら */
+    for (let i = 0; i < sparks.length; i++){
+      const s = sparks[i], u = (t - s.ts) / s.life;
+      if (u < 0 || u > 1) continue;
+      star(s.x, s.y, s.r * Math.sin(u * Math.PI), u * 1.4);
+      ctx.fillStyle = s.c; ctx.fill();
+      if (s.c === "#ffffff"){ ctx.lineWidth = 1.2; ctx.strokeStyle = "rgba(47,91,224,.5)"; ctx.stroke(); }
+    }
+  }
+
+  function finish(){
+    if (done) return; done = true;
+    cancelAnimationFrame(raf); clearTimeout(timer);
+    fx.style.transition = "opacity .45s"; fx.style.opacity = "0";
+    setTimeout(() => { fx.hidden = true; msgBox.classList.remove("show"); running = false; }, 480);
+  }
+  function start(){
+    if (running) return;
+    running = true; done = false;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    build();
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    $("fxlogo").src = document.querySelector(".mark").src;
+    $("fxbig").textContent = MSGS[Math.floor(Math.random() * MSGS.length)];
+    $("fxsub").textContent = "ごみ " + count + "個 回収！";
+    msgBox.classList.remove("show"); void msgBox.offsetWidth;
+    fx.style.transition = "none"; fx.style.opacity = "1"; fx.hidden = false;
+    if (reduce){
+      ctx.fillStyle = "rgb(238,243,253)"; ctx.fillRect(0, 0, W, H);
+      msgBox.classList.add("show"); timer = setTimeout(finish, 2600); return;
+    }
+    const T = 5.0; let t0 = 0, shown = false;
+    function frame(now){
+      if (done) return;
+      if (!t0) t0 = now;
+      const t = (now - t0) / 1000;
+      draw(t);
+      if (t > 3.2 && !shown){ shown = true; msgBox.classList.add("show"); }
+      if (t >= T){ finish(); return; }
+      raf = requestAnimationFrame(frame);
+    }
+    raf = requestAnimationFrame(frame);
+  }
+  btn.addEventListener("click", start);
+  fx.addEventListener("click", finish);
+  window.addEventListener("keydown", e => { if (e.key === "Escape") finish(); });
+  window.__fx = { start, draw, build };   /* 動作確認用 */
+})();
 
 /* ---------- 起動 ---------- */
 renderLinks();
