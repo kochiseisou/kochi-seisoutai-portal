@@ -80,6 +80,16 @@ h2::after{content:"";position:absolute;left:0;bottom:-1px;width:56px;height:3px;
 .nd{font-size:.88rem;font-weight:700;color:var(--sub);font-variant-numeric:tabular-nums}
 .tag{font-size:.74rem;font-weight:700;color:#fff;background:var(--alert);border-radius:3px;padding:0 9px;line-height:1.6}
 .tag.notice{background:#a35f00}
+/* 「詳細はこちら」ボタン */
+.more{display:inline-flex;align-items:center;gap:6px;border:2px solid var(--main);border-radius:6px;padding:5px 18px;color:var(--main);background:#fff;font-weight:700;font-size:.92rem;text-decoration:none;transition:background .3s,color .3s,transform .35s var(--ease)}
+.more:hover{background:var(--main);color:#fff;transform:translateY(-2px)}
+.more span{transition:transform .35s var(--ease)}
+.more:hover span{transform:translate(2px,-2px)}
+.mr{margin-top:10px;white-space:normal}
+dl .mr{grid-column:1/-1;margin-top:8px}
+a.al{color:var(--main);font-weight:700;text-decoration:underline;text-underline-offset:3px;word-break:break-all;transition:color .3s}
+a.al::after{content:"↗";font-size:.8em;margin-left:2px}
+a.al:hover{color:var(--deep)}
 .nt{font-weight:700}
 .nb{margin:4px 0 0;font-size:.95rem;color:var(--ink);white-space:pre-line}
 
@@ -267,7 +277,7 @@ const PORTAL_NAME = "限定ポータル";
 
 /* スプレッドシート連携：Google Apps Script のウェブアプリURLを貼ります。
    空のままだと、下の SAMPLE（見本）が表示されます。 */
-const API_URL = "https://script.google.com/macros/s/AKfycbzNEbWEc6ASaLYFtwCAIzwJaKa1jTjM66RyvexmHpG3onALkEC7dS40hFBc8fMZL-Pc/exec";
+const API_URL = "";
 
 /* リンク：URLを書き換えるだけで反映されます */
 const LINKS = [
@@ -291,11 +301,11 @@ const SAMPLE = {
   news:[
     {date:"2026.10.24", important:true,  title:"【見本】重要なお知らせ", body:"スプレッドシートの「お知らせ」シートに書いた内容が、ここに表示されます。"},
     {date:"2026.10.24", important:false, notice:true, title:"【見本】注目のお知らせ", body:"「注目」にチェックを入れると、重要の下に黄色い帯で出ます。"},
-    {date:"2026.10.24", important:false, title:"【見本】限定ポータルを開設しました", body:"予定・リンク・連絡先を、このページにまとめていきます。"}
+    {date:"2026.10.24", important:false, title:"【見本】限定ポータルを開設しました", body:"予定・リンク・連絡先を、このページにまとめていきます。", url:"https://example.com/"}
   ],
   schedule:[
     {date:"11月11日（水）", past:false, title:"【見本】こうちカーボンニュートラル推進フォーラム　取組発表",
-     details:[["時間","10:00〜"],["会場","（会場名）"],["内容","高知清掃隊として取組発表に登壇"]]},
+     details:[["時間","10:00〜"],["会場","（会場名）"],["内容","高知清掃隊として取組発表に登壇"]], url:"https://example.com/"},
     {date:"10月10日（土）", past:true, title:"【見本】過ぎた予定", details:[["内容","日付が過ぎた予定は、自動で「過ぎた予定」に入ります。"]]}
   ],
   faq:[
@@ -309,6 +319,22 @@ const SAMPLE = {
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const CACHE_KEY = "kct-portal-v1";
+
+/* 「詳細はこちら」ボタン：シートの「リンク」列（URL）と、任意の「リンク名」列から作る */
+function moreLink(x){
+  const u = String((x && x.url) || "").trim();
+  if (!/^https?:\/\//i.test(u)) return "";
+  const label = String((x && x.label) || "").trim() || "詳細はこちら";
+  return `<a class="more" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(label)}<span aria-hidden="true">↗</span></a>`;
+}
+
+/* 本文の中の http:// や https:// で始まる文字を、押せるリンクにする（それ以外の文字は、そのまま表示） */
+const URL_RE = /(https?:\/\/[^\s<>"'）)」』、。，]+)/g;
+function shortUrl(u){ const t = u.replace(/^https?:\/\//, "").replace(/\/$/, ""); return t.length > 44 ? t.slice(0, 43) + "…" : t; }
+function linkify(s){
+  return String(s == null ? "" : s).split(URL_RE).map((p, i) =>
+    i % 2 ? `<a class="al" href="${esc(p)}" target="_blank" rel="noopener noreferrer" title="${esc(p)}">${esc(shortUrl(p))}</a>` : esc(p)).join("");
+}
 
 document.title = "高知清掃隊 " + PORTAL_NAME;
 $("pname").textContent = PORTAL_NAME;
@@ -348,13 +374,14 @@ function renderNews(list){
   const rank = n => n.important ? 2 : n.notice ? 1 : 0;   // 重要 → 注目 → ふつう の順（同じ種類の中は、日付の新しい順のまま）
   list = (list || []).slice().sort((a, b) => rank(b) - rank(a));
   $("newsList").innerHTML = list.length
-    ? list.map(n => `<div class="nitem${n.important ? " imp" : n.notice ? " ntc" : ""}"><div class="nhead"><span class="nd">${esc(n.date)}</span>${n.important ? '<span class="tag">重要</span>' : n.notice ? '<span class="tag notice">注目</span>' : ''}<span class="nt">${esc(n.title)}</span></div>${n.body ? `<p class="nb">${esc(n.body)}</p>` : ''}</div>`).join("")
+    ? list.map(n => `<div class="nitem${n.important ? " imp" : n.notice ? " ntc" : ""}"><div class="nhead"><span class="nd">${esc(n.date)}</span>${n.important ? '<span class="tag">重要</span>' : n.notice ? '<span class="tag notice">注目</span>' : ''}<span class="nt">${esc(n.title)}</span></div>${n.body ? `<p class="nb">${linkify(n.body)}</p>` : ''}${moreLink(n) ? `<div class="mr">${moreLink(n)}</div>` : ''}</div>`).join("")
     : '<p class="empty">いまのところ、お知らせはありません。</p>';
   stagger($("newsList"));
 }
 function schedItem(s, open){
-  const dl = (s.details || []).map(d => `<dt>${esc(d[0])}</dt><dd>${esc(d[1])}</dd>`).join("");
-  return `<details${open ? " open" : ""}><summary><span class="sd">${esc(s.date || "日程調整中")}</span><span class="st">${esc(s.title)}</span></summary>${dl ? `<dl>${dl}</dl>` : ''}</details>`;
+  const dl = (s.details || []).map(d => `<dt>${esc(d[0])}</dt><dd>${linkify(d[1])}</dd>`).join("");
+  const ml = moreLink(s);
+  return `<details${open ? " open" : ""}><summary><span class="sd">${esc(s.date || "日程調整中")}</span><span class="st">${esc(s.title)}</span></summary>${(dl || ml) ? `<dl>${dl}${ml ? `<div class="mr">${ml}</div>` : ''}</dl>` : ''}</details>`;
 }
 function renderSchedule(list){
   list = list || [];
@@ -367,7 +394,7 @@ function renderSchedule(list){
 function renderFaq(list){
   list = list || [];
   $("faqList").innerHTML = list.length
-    ? list.map(f => `<details><summary><span class="st">${esc(f.q)}</span></summary><div class="ans">${esc(f.a)}</div></details>`).join("")
+    ? list.map(f => `<details><summary><span class="st">${esc(f.q)}</span></summary><div class="ans">${linkify(f.a)}${moreLink(f) ? `<div class="mr">${moreLink(f)}</div>` : ''}</div></details>`).join("")
     : '<p class="empty">Q＆Aは、準備中です。</p>';
   stagger($("faqList"));
 }
