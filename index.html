@@ -436,7 +436,7 @@ function renderFaq(list){
 }
 function renderLinks(){
   $("linkList").innerHTML = LINKS.map(l =>
-    `<a class="lk" href="${esc(l.url)}" target="_blank" rel="noopener"><span class="ic">${ICON[l.icon] || ""}</span><span class="lt"><span class="ln">${esc(l.title)}</span><span class="ld">${esc(l.desc)}</span></span><span class="go" aria-hidden="true">↗</span><span class="pill">開く</span></a>`).join("");
+    `<a class="lk" href="${esc(l.url)}" target="_blank" rel="noopener"><span class="ic">${ICON[l.icon] || ""}</span><span class="lt"><span class="ln">${esc(l.title)}</span><span class="ld">${esc(l.desc)}</span></span><span class="go" aria-hidden="true"></span><span class="pill">開く</span></a>`).join("");
   stagger($("linkList"));
 }
 function renderContact(){
